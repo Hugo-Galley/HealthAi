@@ -1,0 +1,9 @@
+sqlalchemy
+pymysql
+sqlacodegen
+fastapi
+uvicorn
+pydantic
+cryptography
+easyworkenv
+pre-commit
