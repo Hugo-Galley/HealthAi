@@ -7,6 +7,7 @@ import pymysql
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from EasyWorkEnv import Config
+from models import Base
 
 configuration = Config("variables.json")
 
@@ -24,10 +25,10 @@ def config_database():
     with connection.cursor() as cursor:
         cursor.execute(f"CREATE DATABASE IF NOT EXISTS `{database}`")
     connection.close()
-
     engine = create_engine(
         f"mysql+pymysql://{user}:{password}@{host}:{port}/{database}"
     )
+    Base.metadata.create_all(bind=engine)
     session_local = sessionmaker(autocommit=False, autoflush=False, bind=engine)
     db = session_local()
     return db
