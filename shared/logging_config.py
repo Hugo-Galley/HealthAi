@@ -2,34 +2,7 @@ import logging
 import os
 import sys
 
-import pymysql
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
 from EasyWorkEnv import Config
-
-configuration = Config("variables.json")
-
-
-def config_database():
-    user = configuration.Bdd.User
-    password = configuration.Bdd.Password
-    host = configuration.Bdd.Host
-    port = configuration.Bdd.Port
-    database = configuration.Bdd.DataBase
-
-    connection = pymysql.connect(
-        host=host, user=user, password=password, database=database, port=port
-    )
-    with connection.cursor() as cursor:
-        cursor.execute(f"CREATE DATABASE IF NOT EXISTS `{database}`")
-    connection.close()
-
-    engine = create_engine(
-        f"mysql+pymysql://{user}:{password}@{host}:{port}/{database}"
-    )
-    session_local = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-    db = session_local()
-    return db
 
 
 def setup_logging():
@@ -46,7 +19,7 @@ def setup_logging():
     console_handler.setFormatter(console_formatter)
 
     file_handler = logging.FileHandler(
-        configuration.Log.FileDestination, mode="a", encoding="utf-8"
+        "log/app.log", mode="a", encoding="utf-8"
     )
     file_handler.setLevel(logging.DEBUG)
     file_formatter = logging.Formatter(
@@ -66,6 +39,3 @@ def setup_logging():
 
     logger.addHandler(console_handler)
     logger.addHandler(file_handler)
-
-
-db = config_database()

@@ -187,3 +187,6 @@ dist-ssr
 *.pem
 test.py
 /log/
+backend/variables.json
+backend/log
+frontend/variables.json
