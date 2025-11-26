@@ -13,9 +13,9 @@ class FileUtils():
             try:
                 with open(filepath, "r", encoding="utf-8") as f:
                     json.load(f)
-                return print("json - OK")
+                return "json - OK"
             except json.JSONDecodeError:
-                return print("json invalide")
+                raise ValueError("json invalide")
         
         elif extension == ".csv":
             try:
@@ -23,9 +23,9 @@ class FileUtils():
                     reader = csv.reader(f)
                     # lecture d'une ligne pour tester
                     next(reader)
-                return print("csv - OK")
+                return "csv - OK"
             except Exception:
-                return print("csv invalide")
+                raise ValueError("csv invalide")
         
         else:
             return print("Format invalide")
