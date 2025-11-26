@@ -7,3 +7,4 @@ pydantic
 cryptography
 easyworkenv
 pre-commit
+pandas
