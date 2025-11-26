@@ -1,6 +1,7 @@
 import os
 import json
 import csv
+import logging
 
 class FileUtils():
 
@@ -13,7 +14,8 @@ class FileUtils():
             try:
                 with open(filepath, "r", encoding="utf-8") as f:
                     json.load(f)
-                return "json - OK"
+                logging.info("json valide")
+                return "json"
             except json.JSONDecodeError:
                 raise ValueError("json invalide")
         
@@ -23,7 +25,8 @@ class FileUtils():
                     reader = csv.reader(f)
                     # lecture d'une ligne pour tester
                     next(reader)
-                return "csv - OK"
+                logging.info("csv valide")
+                return "csv"
             except Exception:
                 raise ValueError("csv invalide")
         
