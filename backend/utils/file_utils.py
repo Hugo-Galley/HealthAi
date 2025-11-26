@@ -3,7 +3,7 @@ import json
 import csv
 import logging
 
-class FileUtils():
+class FileUtils:
 
     @staticmethod
     def detect_file_format(filepath: str) -> str:
