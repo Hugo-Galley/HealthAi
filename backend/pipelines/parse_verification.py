@@ -1,5 +1,7 @@
 import pandas as pd
 
+from datasets_rules import apply_diet_recommendations_rules
+
 def try_parse_value(value, intended_type):
         match intended_type:
             case "int":
@@ -30,3 +32,22 @@ def find_non_parse_type(df: pd.DataFrame, item_type):
                 non_parse.append(
                     {"line": line + 1, "field_value": item, "attempt_type": intended_type, "value": value})
     return {"findError": non_parse}
+
+
+def find_inconcienty_field(df: pd.DataFrame):
+    inconcienty_field = []
+    for line in range(df.shape[0]):
+        for column in range(df.shape[1]):
+            value = df.iloc[line, column]
+            if pd.isna(value):
+                continue
+            if hasattr(value, 'item'):
+                value = value.item()
+            response = apply_diet_recommendations_rules(df, line, column)
+            if isinstance(response, bool):
+                continue
+            elif isinstance(response, str):
+                inconcienty_field.append(
+                    {"line": line, "column": column, "field_value": value, "rule": response}
+                )
+    return inconcienty_field
