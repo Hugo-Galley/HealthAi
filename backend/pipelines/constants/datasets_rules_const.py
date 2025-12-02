@@ -52,10 +52,47 @@ class DietRecommendationRulesConst:
         "Diet_Recommendation": DIET_RECOMMENDATION_CHOICE,
     }
 
-    @staticmethod
-    def interval_rule(min_value, max_value):
-        int(min_value)
+class FoodNutritionRulesConst:
+    CATEGORY_CHOICE = ["Beverage", "Beverage/Dairy", "Beverage/Dairy-Alt", "Beverage/Meal", "Condiment", "Condiment/Dairy", "Condiment/Processed", "Dairy", "Dairy/Dessert", "Dessert", "Fruit", "Grain", "Grain/Dessert", "Grain/Processed", "Legume", "Nut", "Protein", "Vegetable"]
+    CALORIES_MIN = 0
+    CALORIES_MAX = 700
+    PROTEIN_MIN = 0
+    PROTEIN_MAX = 201
+    CARBOHYDRATES_MIN = 0
+    CARBOHYDRATES_MAX = 75
+    FAT_MIN = 0
+    FAT_MAX = 40
+    FIBER_MIN = 0
+    FIBER_MAX = 14
+    SUGAR_MIN = 0
+    SUGAR_MAX = 65
+    SODIUM_MIN = 0
+    SODIUM_MAX = 1600
+    CHOLESTEROL_MIN = 0
+    CHOLESTEROL_MAX = 460
+    MEAL_TYPE = ["Breakfast", "Dinner", "Lunch", "Snack"]
+    WATER_INTAKE_MIN = 0
+    WATER_INTAKE_MAX = 510
+
+    INTERVAL_RULES = {
+        "Calories (kcal)": (CALORIES_MIN, CALORIES_MAX),
+        "Protein (g)": (PROTEIN_MIN, PROTEIN_MAX),
+        "Carbohydrates (g)": (CARBOHYDRATES_MIN, CARBOHYDRATES_MAX),
+        "Fat (g)": (FAT_MIN, FAT_MAX),
+        "Fiber (g)": (FIBER_MIN, FIBER_MAX),
+        "Sugars (g)": (SUGAR_MIN, SUGAR_MAX),
+        "Sodium (mg)": (SODIUM_MIN, SODIUM_MAX),
+        "Cholesterol (mg)": (CHOLESTEROL_MIN, CHOLESTEROL_MAX),
+        "Water_Intake (ml)": (WATER_INTAKE_MIN, WATER_INTAKE_MAX)
+    }
+
+    CHOICE_RULES = {
+        "Meal_Type": MEAL_TYPE,
+        "Category": CATEGORY_CHOICE
+    }
+
+def interval_rule(min_value, max_value):
         return f"La valeur doit être comprise entre {min_value} et {max_value}"
-    @staticmethod
-    def choice_rule(choice):
-        return f"La valeur doit être parmis les choix suivant: {choice}"
+
+def choice_rule(choice):
+    return f"La valeur doit être parmis les choix suivant: {choice}"
