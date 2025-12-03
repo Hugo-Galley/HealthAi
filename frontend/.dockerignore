@@ -1,0 +1,26 @@
+# Do not copy local secrets and env files into the image
+variables-exemple.json
+.env
+*.pem
+*.key
+
+# Python artifacts
+__pycache__/
+*.pyc
+*.pyo
+
+# Git and metadata
+.git
+.gitignore
+
+# Local logs and runtime directories
+log/
+logs/
+
+# IDE files
+.vscode/
+.DS_Store
+
+# Tests and docs
+tests/
+README.MD
