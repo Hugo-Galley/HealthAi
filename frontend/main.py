@@ -1,8 +1,4 @@
-import sys
-from pathlib import Path
+import streamlit as st
 
-sys.path.insert(0, str(Path(__file__).parent.parent))
-
-from shared import setup_logging
-
-setup_logging()
+st.title("HealthAI Coach - Dashboard")
+st.write("Streamlit fonctionne !")
