@@ -1,2 +1,2 @@
-# config.py
+# frontend/config.py
 configuration = {}
