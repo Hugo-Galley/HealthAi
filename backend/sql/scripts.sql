@@ -4,6 +4,9 @@ CREATE TABLE Patient (
     gender VARCHAR(255),
     daily_caloric_intake INT,
     physical_activity_level VARCHAR(255),
+    allergie VARCHAR(255),
+    dietary_nutrient_imbalance_score VARCHAR(255),
+    adherence_to_diet_plan VARCHAR(255),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
