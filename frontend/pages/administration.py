@@ -17,6 +17,7 @@ if "donnees_flagees" not in st.session_state:
                 "Unité": "kcal",
                 "Raison du flag": "Total calories anormalement élevé",
                 "Statut": "En attente",
+                "Anomalie": False,
             },
             {
                 "ID": 2,
@@ -26,6 +27,7 @@ if "donnees_flagees" not in st.session_state:
                 "Unité": "km",
                 "Raison du flag": "Distance suspecte",
                 "Statut": "En attente",
+                "Anomalie": True,
             },
             {
                 "ID": 3,
@@ -35,21 +37,24 @@ if "donnees_flagees" not in st.session_state:
                 "Unité": "g",
                 "Raison du flag": "Apport en lipides inhabituel",
                 "Statut": "En attente",
+                "Anomalie": True,
             },
         ]
     )
 
 df = st.session_state.donnees_flagees
+col_anomalie = "Anomalie" if "Anomalie" in df.columns else "anomalie"
+df_anomalies = df[df[col_anomalie] == True] if col_anomalie in df.columns else pd.DataFrame()
 
-if len(df) == 0:
-    st.success("Aucune donnée en attente de validation.")
+if len(df_anomalies) == 0:
+    st.success("Aucune donnée avec anomalie détectée.")
 else:
-    st.dataframe(df, use_container_width=True)
+    st.dataframe(df_anomalies, use_container_width=True)
 
     st.markdown("---")
     st.subheader("Validation")
 
-    ids = df["ID"].tolist()
+    ids = df_anomalies["ID"].tolist()
     selected_id = st.selectbox("Sélectionner un ID", ids)
 
     selected = df[df["ID"] == selected_id].iloc[0]
@@ -73,7 +78,8 @@ else:
         idx = df[df["ID"] == selected_id].index[0]
 
         if action == "Valider":
-            st.session_state.donnees_flagees.drop(index=idx, inplace=True)
+            if col_anomalie in st.session_state.donnees_flagees.columns:
+                st.session_state.donnees_flagees.at[idx, col_anomalie] = False
             st.success(f"Donnée {selected_id} validée.")
 
         elif action == "Rejeter":
@@ -82,7 +88,8 @@ else:
 
         else:
             st.session_state.donnees_flagees.at[idx, "Valeur"] = nouvelle_valeur
-            st.session_state.donnees_flagees.drop(index=idx, inplace=True)
+            if col_anomalie in st.session_state.donnees_flagees.columns:
+                st.session_state.donnees_flagees.at[idx, col_anomalie] = False
             st.success(f"Donnée {selected_id} modifiée et validée.")
 
         st.rerun()
