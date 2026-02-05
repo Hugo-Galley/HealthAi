@@ -1,8 +1,14 @@
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).parent))
+
 import pandas as pd
 
 from constants.datasets_rules_const import DietRecommendationRulesConst as CstDiet
 from constants.datasets_rules_const import FoodNutritionRulesConst as CstFood
 from datasets_rules import apply_recommendations_rules
+from etl_database_loader import load_food_nutrition, load_diet_recommendations
 
 def try_parse_value(value, intended_type):
         match intended_type:
@@ -54,3 +60,23 @@ def find_inconcienty_field(df: pd.DataFrame):
                     )
                     break
     return inconcienty_field
+
+
+def save_to_database(df: pd.DataFrame, dataset_type: str, session=None) -> dict:
+    if dataset_type == "food_nutrition":
+        return load_food_nutrition(df, session)
+    elif dataset_type == "diet_recommendations":
+        return load_diet_recommendations(df, session)
+    raise ValueError(f"Type de dataset inconnu: {dataset_type}")
+
+
+def run_etl_pipeline(session=None) -> dict:
+    data_path = Path(__file__).parent.parent / "data"
+    
+    food_df = pd.read_csv(data_path / "daily_food_nutrition_dataset.csv")
+    diet_df = pd.read_csv(data_path / "diet_recommendations_dataset.csv")
+    
+    return {
+        "food_nutrition": load_food_nutrition(food_df, session),
+        "diet_recommendations": load_diet_recommendations(diet_df, session)
+    }
