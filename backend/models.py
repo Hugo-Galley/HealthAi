@@ -39,6 +39,9 @@ class Patient(Base):
     gender: Mapped[Optional[str]] = mapped_column(String(255))
     daily_caloric_intake: Mapped[Optional[int]] = mapped_column(Integer)
     physical_activity_level: Mapped[Optional[str]] = mapped_column(String(255))
+    allergie: Mapped[Optional[str]] = mapped_column(String(255))
+    dietary_nutrient_imbalance_score: Mapped[Optional[str]] = mapped_column(String(255))
+    adherence_to_diet_plan: Mapped[Optional[str]] = mapped_column(String(255))
     created_at: Mapped[Optional[datetime.datetime]] = mapped_column(TIMESTAMP, server_default=text('CURRENT_TIMESTAMP'))
 
     BMI: Mapped[list['BMI']] = relationship('BMI', back_populates='patient')
