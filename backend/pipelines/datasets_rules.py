@@ -33,8 +33,12 @@ def apply_recommendations_rules(df: pd.DataFrame, line, column, constant):
     if pd.isna(value):
         return True
 
-    weight = df.loc[line, "Weight_kg"]
-    height = df.loc[line, "Height_cm"]
+    if "Weight_kg" in df.columns and "Height_cm" in df.columns:
+        weight = df.loc[line, "Weight_kg"]
+        height = df.loc[line, "Height_cm"]
+    else:
+        weight = None
+        height = None
 
     if pd.isna(weight) or pd.isna(height):
         return True
