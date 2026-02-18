@@ -1,78 +1,93 @@
-import streamlit as st
+from pathlib import Path
+
 import pandas as pd
 import plotly.express as px
-import plotly.graph_objects as go
+import streamlit as st
+
+
+def load_food_data() -> pd.DataFrame:
+    data_dir = Path(__file__).resolve().parent.parent / "data"
+    full_dataset = data_dir / "daily_food_nutrition_dataset.csv"
+    fallback_dataset = data_dir / "base_alimentaire.csv"
+
+    if full_dataset.exists():
+        return pd.read_csv(full_dataset)
+
+    if fallback_dataset.exists():
+        df = pd.read_csv(fallback_dataset)
+        return df.rename(
+            columns={
+                "Aliment": "Food_Item",
+                "Categorie": "Category",
+                "Calories": "Calories (kcal)",
+                "Proteines": "Protein (g)",
+                "Glucides": "Carbohydrates (g)",
+                "Lipides": "Fat (g)",
+            }
+        )
+
+    return pd.DataFrame()
+
 
 st.title("Nutrition")
 st.markdown("---")
 
+df_food = load_food_data()
+
+if df_food.empty:
+    st.warning("Aucune donnee alimentaire disponible.")
+    st.stop()
+
+if "Category" in df_food.columns:
+    categories = ["Toutes"] + sorted(df_food["Category"].dropna().astype(str).unique().tolist())
+    category = st.selectbox("Categorie", categories)
+    if category != "Toutes":
+        df_food = df_food[df_food["Category"] == category]
+
+cal_col = "Calories (kcal)"
+protein_col = "Protein (g)"
+fat_col = "Fat (g)"
+fiber_col = "Fiber (g)"
+sodium_col = "Sodium (mg)"
+
 col1, col2, col3 = st.columns(3)
-
 with col1:
-    date_debut = st.date_input("Date de début")
-
+    st.metric("Calories moyennes", f"{df_food[cal_col].mean():.1f}" if cal_col in df_food.columns else "N/A")
 with col2:
-    date_fin = st.date_input("Date de fin")
-
+    st.metric("Proteines moyennes", f"{df_food[protein_col].mean():.1f} g" if protein_col in df_food.columns else "N/A")
 with col3:
-    utilisateur = st.selectbox("Utilisateur", ["Tous", "Alice", "Bob", "Charlie", "Diane"])
+    st.metric("Lipides moyens", f"{df_food[fat_col].mean():.1f} g" if fat_col in df_food.columns else "N/A")
 
 st.markdown("---")
 
-col_left, col_right = st.columns(2)
+left, right = st.columns(2)
 
-with col_left:
-    st.subheader("Répartition des macronutriments")
+with left:
+    st.subheader("Repartition des aliments par categorie")
+    if "Category" in df_food.columns:
+        category_counts = df_food["Category"].value_counts().reset_index()
+        category_counts.columns = ["Category", "Count"]
+        fig = px.bar(category_counts, x="Category", y="Count")
+        st.plotly_chart(fig, use_container_width=True)
+    else:
+        st.info("Colonne Category absente.")
 
-    df_macros = pd.DataFrame(
-        {
-            "Macronutriment": ["Protéines", "Glucides", "Lipides"],
-            "Valeur (g)": [110, 230, 75],
-        }
-    )
-
-    fig_macros = px.pie(
-        df_macros,
-        names="Macronutriment",
-        values="Valeur (g)",
-        color_discrete_sequence=px.colors.qualitative.Set3,
-    )
-    st.plotly_chart(fig_macros, use_container_width=True)
-
-with col_right:
-    st.subheader("Tendances nutritionnelles")
-
-    dates = pd.date_range(start="2024-01-01", periods=30, freq="D")
-    df_tendances = pd.DataFrame(
-        {
-            "Date": dates,
-            "Calories": [1800 + i * 15 for i in range(30)],
-            "Protéines": [90 + i * 1.5 for i in range(30)],
-            "Glucides": [200 + i * 2 for i in range(30)],
-            "Lipides": [60 + i for i in range(30)],
-        }
-    )
-
-    fig = go.Figure()
-    fig.add_trace(go.Scatter(x=df_tendances["Date"], y=df_tendances["Calories"], mode="lines", name="Calories"))
-    fig.add_trace(go.Scatter(x=df_tendances["Date"], y=df_tendances["Protéines"], mode="lines", name="Protéines (g)"))
-    fig.add_trace(go.Scatter(x=df_tendances["Date"], y=df_tendances["Glucides"], mode="lines", name="Glucides (g)"))
-    fig.add_trace(go.Scatter(x=df_tendances["Date"], y=df_tendances["Lipides"], mode="lines", name="Lipides (g)"))
-    fig.update_layout(xaxis_title="Date", yaxis_title="Valeur")
-    st.plotly_chart(fig, use_container_width=True)
+with right:
+    st.subheader("Top aliments riches en fibres")
+    if fiber_col in df_food.columns and "Food_Item" in df_food.columns:
+        st.dataframe(
+            df_food.sort_values(by=fiber_col, ascending=False)[["Food_Item", "Category", fiber_col]].head(10),
+            use_container_width=True,
+        )
+    else:
+        st.info("Colonnes Fiber (g) / Food_Item absentes.")
 
 st.markdown("---")
-
-st.subheader("Journal nutritionnel (exemple)")
-
-df_journal = pd.DataFrame(
-    [
-        {"Date": "2024-01-20", "Utilisateur": "Alice", "Repas": "Déjeuner", "Calories": 650},
-        {"Date": "2024-01-20", "Utilisateur": "Bob", "Repas": "Dîner", "Calories": 720},
-        {"Date": "2024-01-19", "Utilisateur": "Charlie", "Repas": "Petit-déjeuner", "Calories": 420},
-        {"Date": "2024-01-19", "Utilisateur": "Diane", "Repas": "Déjeuner", "Calories": 580},
-    ]
-)
-
-st.dataframe(df_journal, use_container_width=True)
-
+st.subheader("Aliments a faible sodium")
+if sodium_col in df_food.columns and "Food_Item" in df_food.columns:
+    st.dataframe(
+        df_food.sort_values(by=sodium_col, ascending=True)[["Food_Item", "Category", sodium_col]].head(10),
+        use_container_width=True,
+    )
+else:
+    st.info("Colonnes Sodium (mg) / Food_Item absentes.")
