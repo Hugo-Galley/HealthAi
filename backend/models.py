@@ -42,6 +42,9 @@ class Patient(Base):
     allergie: Mapped[Optional[str]] = mapped_column(String(255))
     dietary_nutrient_imbalance_score: Mapped[Optional[str]] = mapped_column(String(255))
     adherence_to_diet_plan: Mapped[Optional[str]] = mapped_column(String(255))
+    cholesterol_mg_dl: Mapped[Optional[float]] = mapped_column(Float)
+    blood_pressure_mmhg: Mapped[Optional[str]] = mapped_column(String(255))
+    glucose_mg_dl: Mapped[Optional[float]] = mapped_column(Float)
     created_at: Mapped[Optional[datetime.datetime]] = mapped_column(TIMESTAMP, server_default=text('CURRENT_TIMESTAMP'))
 
     BMI: Mapped[list['BMI']] = relationship('BMI', back_populates='patient')
