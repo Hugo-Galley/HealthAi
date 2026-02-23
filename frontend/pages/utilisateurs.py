@@ -8,10 +8,10 @@ st.subheader("Liste des utilisateurs")
 
 df = pd.DataFrame(
     [
-        {"ID": 1, "Nom": "Alice Martin", "Email": "alice@example.com", "Statut": "Actif", "Dernière activité": "2024-01-20"},
-        {"ID": 2, "Nom": "Bob Dupont", "Email": "bob@example.com", "Statut": "Actif", "Dernière activité": "2024-01-19"},
-        {"ID": 3, "Nom": "Charlie Durand", "Email": "charlie@example.com", "Statut": "Inactif", "Dernière activité": "2023-12-05"},
-        {"ID": 4, "Nom": "Diane Leroy", "Email": "diane@example.com", "Statut": "Actif", "Dernière activité": "2024-01-18"},
+        {"ID": 1, "Nom": "Alice Martin", "Email": "alice@example.com", "Statut": "Actif"},
+        {"ID": 2, "Nom": "Bob Dupont", "Email": "bob@example.com", "Statut": "Actif"},
+        {"ID": 3, "Nom": "Charlie Durand", "Email": "charlie@example.com", "Statut": "Inactif"},
+        {"ID": 4, "Nom": "Diane Leroy", "Email": "diane@example.com", "Statut": "Actif"},
     ]
 )
 
