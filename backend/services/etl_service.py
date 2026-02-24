@@ -1,6 +1,6 @@
 from backend.utils.file_utils import FileUtils
 from backend.utils.data_cleaning import DataCleaning
-from backend.pipelines.datasets_verification import (find_non_parse_type, find_inconcienty_field, save_to_database)
+from backend.pipelines.datasets_verification import (find_non_parse_type, find_inconcienty_field)
 from backend.pipelines.constants.datasets_verification_const import ITEM_TYPE_DAILY_FOOD_NUTRITION as food_item
 from backend.pipelines.constants.datasets_verification_const import ITEM_TYPE_DIET_RECOMMENDATIONS as diet_item
 from backend.pipelines.constants.datasets_rules_const import DietRecommendationRulesConst as CstDiet
@@ -8,7 +8,21 @@ from backend.pipelines.constants.datasets_rules_const import FoodNutritionRulesC
 from backend.pipelines.etl_database_loader import run_etl_to_database
 from pathlib import Path
 import json
+import logging
 import pandas as pd
+
+logger = logging.getLogger(__name__)
+
+
+def _get_invalid_lines(non_parse_errors: list, inconsistency_errors: list) -> set:
+    """Récupère les indices de lignes invalides (non-parsables ou incohérentes)."""
+    invalid = set()
+    for err in non_parse_errors:
+        invalid.add(err["line"] - 1)  # find_non_parse_type utilise line+1
+    for err in inconsistency_errors:
+        invalid.add(err["line"])
+    return invalid
+
 
 class EtlService:
 
@@ -16,7 +30,7 @@ class EtlService:
         data_path = Path(__file__).parent.parent / "data"
 
         output_path = Path(__file__).parent.parent / "output" / "json"
-        output_path.mkdir(parents=True, exist_ok=True) 
+        output_path.mkdir(parents=True, exist_ok=True)
 
         # Extract
         FileUtils.detect_file_format(data_path / "daily_food_nutrition_dataset.csv")
@@ -57,14 +71,23 @@ class EtlService:
         with open(output_path / "inconsistent_diet.json", "w", encoding="utf-8") as f:
             json.dump(diet_normalized_final, f, indent=4, ensure_ascii=False)
 
-        # Load
-        diet_final_df = diet_deduped
-        food_final_df = food_deduped
+        # Filtrage des lignes invalides avant insertion en BDD
+        food_invalid_lines = _get_invalid_lines(non_parse_food, food_normalized_final)
+        diet_invalid_lines = _get_invalid_lines(non_parse_diet, diet_normalized_final)
 
-        save_to_database(diet_final_df, 'diet_recommendations')
-        save_to_database(food_final_df, 'food_nutrition')
+        food_final_df = food_deduped.drop(index=list(food_invalid_lines), errors='ignore').reset_index(drop=True)
+        diet_final_df = diet_deduped.drop(index=list(diet_invalid_lines), errors='ignore').reset_index(drop=True)
 
-        run_etl_to_database(diet_final_df, food_final_df)
+        logger.info(f"Food : {len(food_invalid_lines)} lignes invalides retirées, {len(food_final_df)} lignes à insérer")
+        logger.info(f"Diet : {len(diet_invalid_lines)} lignes invalides retirées, {len(diet_final_df)} lignes à insérer")
+
+        # ── Load ──
+        logger.info("Début du chargement en base de données...")
+        results = run_etl_to_database(food_final_df, diet_final_df)
+        logger.info(f"Résultats du chargement : {results}")
+
+        return results
+
 
 if __name__ == "__main__":
     etl = EtlService()
