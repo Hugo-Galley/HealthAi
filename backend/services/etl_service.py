@@ -29,9 +29,6 @@ class EtlService:
     def run(self):
         data_path = Path(__file__).parent.parent / "data"
 
-        output_path = Path(__file__).parent.parent / "output" / "json"
-        output_path.mkdir(parents=True, exist_ok=True)
-
         # Extract
         FileUtils.detect_file_format(data_path / "daily_food_nutrition_dataset.csv")
         food_df = pd.read_csv(
@@ -56,24 +53,16 @@ class EtlService:
         diet_normalized_basic = find_non_parse_type(diet_deduped, diet_item)
         diet_normalized_final = find_inconcienty_field(diet_deduped, CstDiet)
 
-        # Sauvegarde des données faussées dans des JSON
-        non_parse_food = food_normalized_basic["findError"]
-        with open(output_path / "non_parse_food.json", "w", encoding="utf-8") as f:
-            json.dump(non_parse_food, f, indent=4, ensure_ascii=False)
-
-        with open(output_path / "inconsistent_food.json", "w", encoding="utf-8") as f:
-            json.dump(food_normalized_final, f, indent=4, ensure_ascii=False)
-
-        non_parse_diet = diet_normalized_basic["findError"]
-        with open(output_path / "non_parse_diet.json", "w", encoding="utf-8") as f:
-            json.dump(non_parse_diet, f, indent=4, ensure_ascii=False)
-
-        with open(output_path / "inconsistent_diet.json", "w", encoding="utf-8") as f:
-            json.dump(diet_normalized_final, f, indent=4, ensure_ascii=False)
+        # Récupération des erreurs directement en mémoire 
+        non_parse_food = food_normalized_basic["findError"] 
+        inconsistent_food = food_normalized_final 
+        
+        non_parse_diet = diet_normalized_basic["findError"] 
+        inconsistent_diet = diet_normalized_final
 
         # Filtrage des lignes invalides avant insertion en BDD
-        food_invalid_lines = _get_invalid_lines(non_parse_food, food_normalized_final)
-        diet_invalid_lines = _get_invalid_lines(non_parse_diet, diet_normalized_final)
+        food_invalid_lines = _get_invalid_lines(non_parse_food, inconsistent_food)
+        diet_invalid_lines = _get_invalid_lines(non_parse_diet, inconsistent_diet)
 
         food_final_df = food_deduped.drop(index=list(food_invalid_lines), errors='ignore').reset_index(drop=True)
         diet_final_df = diet_deduped.drop(index=list(diet_invalid_lines), errors='ignore').reset_index(drop=True)
@@ -86,7 +75,26 @@ class EtlService:
         results = run_etl_to_database(food_final_df, diet_final_df)
         logger.info(f"Résultats du chargement : {results}")
 
-        return results
+        # Retour API-ready 
+        return { 
+            "summary": { 
+                "food_total": len(food_df), 
+                "diet_total": len(diet_df), 
+                "food_invalid": len(food_invalid_lines), 
+                "diet_invalid": len(diet_invalid_lines), 
+                }, 
+            "errors": { 
+                "food": { 
+                    "non_parse": non_parse_food, 
+                    "inconsistent": inconsistent_food 
+                    }, 
+                "diet": { 
+                    "non_parse": non_parse_diet, 
+                    "inconsistent": inconsistent_diet 
+                    } 
+                }, 
+            "db_results": results 
+        }
 
 
 if __name__ == "__main__":
