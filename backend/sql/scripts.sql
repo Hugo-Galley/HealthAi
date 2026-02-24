@@ -7,6 +7,9 @@ CREATE TABLE Patient (
     allergie VARCHAR(255),
     dietary_nutrient_imbalance_score VARCHAR(255),
     adherence_to_diet_plan VARCHAR(255),
+    cholesterol_mg_dl FLOAT,
+    blood_pressure_mmhg VARCHAR(255),
+    glucose_mg_dl FLOAT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
