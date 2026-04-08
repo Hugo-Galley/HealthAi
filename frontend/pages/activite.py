@@ -1,46 +1,30 @@
-import requests
 import pandas as pd
 import plotly.express as px
 import streamlit as st
 
-API_BASE = "http://localhost:8000"
+from api_client import get_json
 
 
-def _get(endpoint: str) -> list | dict | None:
-    try:
-        resp = requests.get(f"{API_BASE}{endpoint}", timeout=5)
-        resp.raise_for_status()
-        body = resp.json()
-        if isinstance(body, dict) and not body.get("success", True):
-            return None
-        return body.get("data") if isinstance(body, dict) and "data" in body else body
-    except requests.exceptions.ConnectionError:
-        st.error(f"Impossible de joindre le backend ({API_BASE}). Vérifiez que le serveur est démarré.")
-        return None
-    except requests.exceptions.HTTPError as ex:
-        if ex.response.status_code == 404:
-            return None
-        st.error(f"Erreur API `{endpoint}` : {ex}")
-        return None
-    except Exception as ex:
-        st.error(f"Erreur lors de l'appel `{endpoint}` : {ex}")
-        return None
-
-
-def _df(endpoint: str) -> pd.DataFrame:
-    data = _get(endpoint)
-    if not data:
-        return pd.DataFrame()
-    return pd.DataFrame(data)
+def load_kpi(path: str) -> tuple[pd.DataFrame, str | None]:
+    payload = get_json(path)
+    if not payload.get("success"):
+        return pd.DataFrame(), payload.get("error", f"API error on {path}")
+    data = payload.get("data")
+    if isinstance(data, list):
+        return pd.DataFrame(data), None
+    if isinstance(data, dict):
+        return pd.DataFrame([data]), None
+    return pd.DataFrame(), f"Unexpected payload for {path}"
 
 
 st.title("Activité physique")
 st.markdown("---")
 
-# Données disponibles via le back : calories et adhérence par niveau d'activité
-df = _df("/kpi/adherenceByActivityLevel")
+df, err = load_kpi("/kpi/adherenceByActivityLevel")
 
-if not df.empty:
+if err:
+    st.warning(f"Impossible de charger les données d'activité : {err}")
+elif not df.empty:
     df.columns = ["Niveau d'activité", "Adhérence (%)", "Calories moy. (kcal)", "Nb patients"]
 
     col1, col2, col3 = st.columns(3)
