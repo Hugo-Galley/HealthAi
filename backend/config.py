@@ -6,6 +6,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 import pymysql
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+from urllib.parse import quote_plus
 from EasyWorkEnv import Config
 from models import Base
 
@@ -26,7 +27,7 @@ def config_database():
         cursor.execute(f"CREATE DATABASE IF NOT EXISTS `{database}`")
     connection.close()
     engine = create_engine(
-        f"mysql+pymysql://{user}:{password}@{host}:{port}/{database}"
+        f"mysql+pymysql://{user}:{quote_plus(password)}@{host}:{port}/{database}"
     )
     Base.metadata.create_all(bind=engine)
     session_local = sessionmaker(autocommit=False, autoflush=False, bind=engine)
