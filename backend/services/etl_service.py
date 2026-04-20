@@ -28,6 +28,8 @@ class EtlService:
 
     def run(self):
         data_path = Path(__file__).parent.parent / "data"
+        output_path = Path(__file__).parent.parent / "data/output"
+        output_path.mkdir(exist_ok=True)
 
         # Extract
         FileUtils.detect_file_format(data_path / "daily_food_nutrition_dataset.csv")
@@ -74,6 +76,11 @@ class EtlService:
         logger.info("Début du chargement en base de données...")
         results = run_etl_to_database(food_final_df, diet_final_df)
         logger.info(f"Résultats du chargement : {results}")
+
+        # Export des datasets propres
+        food_final_df.to_csv(output_path / "food_clean.csv", index=False)
+        diet_final_df.to_csv(output_path / "diet_clean.csv", index=False)
+        logger.info("Export des datasets propres terminé.")
 
         # Retour API-ready 
         return { 
