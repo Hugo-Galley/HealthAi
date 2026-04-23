@@ -1,93 +1,84 @@
-from pathlib import Path
-
+import requests
 import pandas as pd
 import plotly.express as px
 import streamlit as st
 
+API_BASE = "http://localhost:8000"
 
-def load_food_data() -> pd.DataFrame:
-    data_dir = Path(__file__).resolve().parent.parent / "data"
-    full_dataset = data_dir / "daily_food_nutrition_dataset.csv"
-    fallback_dataset = data_dir / "base_alimentaire.csv"
 
-    if full_dataset.exists():
-        return pd.read_csv(full_dataset)
+def _get(endpoint: str) -> list | None:
+    try:
+        resp = requests.get(f"{API_BASE}{endpoint}", timeout=5)
+        resp.raise_for_status()
+        body = resp.json()
+        if isinstance(body, dict) and not body.get("success", True):
+            st.error(f"Erreur API `{endpoint}` : {body.get('error')}")
+            return None
+        return body.get("data") if isinstance(body, dict) and "data" in body else body
+    except requests.exceptions.ConnectionError:
+        st.error(f"Impossible de joindre le backend ({API_BASE}). Vérifiez que le serveur est démarré.")
+        return None
+    except Exception as ex:
+        st.error(f"Erreur lors de l'appel `{endpoint}` : {ex}")
+        return None
 
-    if fallback_dataset.exists():
-        df = pd.read_csv(fallback_dataset)
-        return df.rename(
-            columns={
-                "Aliment": "Food_Item",
-                "Categorie": "Category",
-                "Calories": "Calories (kcal)",
-                "Proteines": "Protein (g)",
-                "Glucides": "Carbohydrates (g)",
-                "Lipides": "Fat (g)",
-            }
-        )
 
-    return pd.DataFrame()
+def _df(endpoint: str) -> pd.DataFrame:
+    data = _get(endpoint)
+    if not data:
+        return pd.DataFrame()
+    return pd.DataFrame(data)
 
 
 st.title("Nutrition")
 st.markdown("---")
 
-df_food = load_food_data()
-
-if df_food.empty:
-    st.warning("Aucune donnee alimentaire disponible.")
-    st.stop()
-
-if "Category" in df_food.columns:
-    categories = ["Toutes"] + sorted(df_food["Category"].dropna().astype(str).unique().tolist())
-    category = st.selectbox("Categorie", categories)
-    if category != "Toutes":
-        df_food = df_food[df_food["Category"] == category]
-
-cal_col = "Calories (kcal)"
-protein_col = "Protein (g)"
-fat_col = "Fat (g)"
-fiber_col = "Fiber (g)"
-sodium_col = "Sodium (mg)"
-
 col1, col2, col3 = st.columns(3)
-with col1:
-    st.metric("Calories moyennes", f"{df_food[cal_col].mean():.1f}" if cal_col in df_food.columns else "N/A")
-with col2:
-    st.metric("Proteines moyennes", f"{df_food[protein_col].mean():.1f} g" if protein_col in df_food.columns else "N/A")
-with col3:
-    st.metric("Lipides moyens", f"{df_food[fat_col].mean():.1f} g" if fat_col in df_food.columns else "N/A")
+
+# Macros moyens par repas
+df_meals = _df("/kpi/avgKcalByMeal")
+if not df_meals.empty:
+    df_meals.columns = ["Type de repas", "Calories moy. (kcal)", "Protéines moy. (g)", "Lipides moy. (g)", "Fibres moy. (g)"]
+    with col1:
+        st.metric("Calories moyennes", f"{df_meals['Calories moy. (kcal)'].mean():.1f} kcal")
+    with col2:
+        st.metric("Protéines moyennes", f"{df_meals['Protéines moy. (g)'].mean():.1f} g")
+    with col3:
+        st.metric("Lipides moyens", f"{df_meals['Lipides moy. (g)'].mean():.1f} g")
 
 st.markdown("---")
 
 left, right = st.columns(2)
 
 with left:
-    st.subheader("Repartition des aliments par categorie")
-    if "Category" in df_food.columns:
-        category_counts = df_food["Category"].value_counts().reset_index()
-        category_counts.columns = ["Category", "Count"]
-        fig = px.bar(category_counts, x="Category", y="Count")
+    st.subheader("Répartition des aliments par catégorie")
+    df_cat = _df("/kpi/nbrFoodsItemByCategory")
+    if not df_cat.empty:
+        df_cat.columns = ["Catégorie", "Nombre d'aliments"]
+        fig = px.bar(
+            df_cat.sort_values("Nombre d'aliments", ascending=False),
+            x="Catégorie",
+            y="Nombre d'aliments",
+            color="Catégorie",
+        )
         st.plotly_chart(fig, use_container_width=True)
-    else:
-        st.info("Colonne Category absente.")
 
 with right:
     st.subheader("Top aliments riches en fibres")
-    if fiber_col in df_food.columns and "Food_Item" in df_food.columns:
+    df_fiber = _df("/kpi/topFiberFoods")
+    if not df_fiber.empty:
+        df_fiber.columns = ["Aliment", "Catégorie", "Fibres (g)", "Calories (kcal)"]
         st.dataframe(
-            df_food.sort_values(by=fiber_col, ascending=False)[["Food_Item", "Category", fiber_col]].head(10),
+            df_fiber.sort_values("Fibres (g)", ascending=False)[["Aliment", "Catégorie", "Fibres (g)"]],
             use_container_width=True,
         )
-    else:
-        st.info("Colonnes Fiber (g) / Food_Item absentes.")
 
 st.markdown("---")
-st.subheader("Aliments a faible sodium")
-if sodium_col in df_food.columns and "Food_Item" in df_food.columns:
+st.subheader("Aliments à faible sodium")
+df_sodium = _df("/kpi/lowSodiumFoods")
+if not df_sodium.empty:
+    df_sodium.columns = ["Aliment", "Catégorie", "Sodium (mg)", "Calories (kcal)", "Protéines (g)"]
     st.dataframe(
-        df_food.sort_values(by=sodium_col, ascending=True)[["Food_Item", "Category", sodium_col]].head(10),
+        df_sodium.sort_values("Sodium (mg)")[["Aliment", "Catégorie", "Sodium (mg)"]],
         use_container_width=True,
     )
-else:
-    st.info("Colonnes Sodium (mg) / Food_Item absentes.")

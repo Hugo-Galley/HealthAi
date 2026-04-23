@@ -18,7 +18,7 @@ st.markdown("---")
 st.markdown(
     """
 Application de coaching HealthAI avec :
-- un dashboard de synthèse,
+- des visualisations & analyses par catégorie (profil épidémiologique, comportement alimentaire, indicateurs de santé, composition nutritionnelle),
 - une gestion des utilisateurs,
 - une analyse nutritionnelle,
 - un suivi de l'activité,
