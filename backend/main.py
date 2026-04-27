@@ -1,7 +1,8 @@
 import sys
 from pathlib import Path
-from api.kpi import kpi_router
+from api.data import data_router
 from api.etl import etl_router
+from api.kpi import kpi_router
 from api.non_kpi import non_kpi_router
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -15,6 +16,7 @@ app = FastAPI()
 app.include_router(kpi_router)
 app.include_router(etl_router)
 app.include_router(non_kpi_router)
+app.include_router(data_router)
 
 if __name__ == "__main__":
     uvicorn.run("main:app", host="localhost", port=8000, reload=True)
