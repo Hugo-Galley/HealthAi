@@ -27,6 +27,7 @@ def load_flagged_data() -> tuple[pd.DataFrame, str | None]:
         "flag_reason": "Raison du flag",
         "status": "Statut",
         "is_anomaly": "Anomalie",
+        "anomalie": "Anomalie",
     }
     df = df.rename(columns={k: v for k, v in rename_map.items() if k in df.columns})
     return df, None
@@ -56,7 +57,6 @@ if col_anomalie not in df.columns:
     st.stop()
 
 df_anomalies = df[df[col_anomalie] == True]
-
 if len(df_anomalies) == 0:
     st.success("Aucune donnee avec anomalie detectee.")
 else:
